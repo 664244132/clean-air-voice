@@ -1,29 +1,142 @@
 <!doctype html>
-<html lang="th">
+<html lang="th" class="dark">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Clean Air Voice Assistant</title>
-  <style>
-    body{font-family:system-ui,sans-serif;margin:0;background:#0f172a;color:#fff;min-height:100vh;display:grid;place-items:center}
-    .card{width:min(900px,92vw);background:#111827;padding:28px;border-radius:22px;box-shadow:0 20px 60px #0006;text-align:center}
-    h1{margin-top:0}.status{font-size:1.2rem;padding:14px;border-radius:14px;background:#1f2937;margin:16px 0}
-    button{font-size:1.05rem;padding:12px 18px;border:0;border-radius:12px;margin:6px;cursor:pointer}
-    #start{background:#22c55e}#stop{background:#ef4444;color:white}video{width:100%;margin-top:20px;border-radius:16px;display:none;background:#000}
-    #transcript{color:#cbd5e1;min-height:28px}
-  </style>
+  <title>Clean Air Voice Assistant - ผู้ช่วยสั่งการด้วยเสียง</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Custom Styles & Tokens -->
+  <link rel="stylesheet" href="css/style.css" />
 </head>
-<body>
-  <main class="card">
-    <h1>Clean Air Voice Assistant</h1>
-    <div id="status" class="status">กด “เริ่มระบบ” แล้วอนุญาตไมโครโฟน</div>
-    <div id="transcript"></div>
-    <button id="start">🎤 เริ่มระบบ</button>
-    <button id="stop">⛔ หยุด</button>
-    <video id="video" controls>
-      <source src="clean-air-for-life.mp4" type="video/mp4" />
-    </video>
+<body class="min-h-screen bg-[#09090b] text-zinc-100 flex flex-col justify-between select-none">
+
+  <!-- ── Header ────────────────────────────────────────────── -->
+  <header class="flex items-center justify-between px-6 sm:px-8 h-[56px] border-b border-zinc-800/80 shrink-0">
+    <div class="flex items-center gap-3">
+      <div id="status-dot" class="w-2 h-2 rounded-full bg-zinc-600 transition-all duration-300"></div>
+      <span class="text-xs font-semibold text-zinc-300 tracking-[0.28em] uppercase font-display-custom">
+        CLEAN AIR VOICE
+      </span>
+    </div>
+
+    <div class="flex items-center gap-3 text-[10px] text-zinc-500 tracking-widest font-mono-custom">
+      <span class="hidden sm:inline">GEMINI LIVE API</span>
+      <span class="hidden sm:inline text-zinc-700">·</span>
+      <span>WEB AUDIO</span>
+    </div>
+  </header>
+
+  <!-- ── Main Area ─────────────────────────────────────────── -->
+  <main class="flex-1 flex flex-col items-center justify-between py-10 px-6 sm:px-8 gap-8 max-w-4xl mx-auto w-full">
+
+    <!-- Center Control Column -->
+    <div class="flex flex-col items-center gap-6 w-full max-w-xl text-center">
+
+      <!-- Status Badge -->
+      <div class="flex items-center justify-center gap-2 h-6 px-3 py-1 rounded-full bg-zinc-900/80 border border-zinc-800/80" aria-live="polite">
+        <span id="status-text" class="text-[11px] tracking-[0.2em] uppercase font-mono-custom text-zinc-400">
+          กดปุ่มไมโครโฟนเพื่อเริ่มระบบ
+        </span>
+      </div>
+
+      <!-- Transcript Box -->
+      <div id="transcript-box" class="hidden w-full px-4 py-3 rounded-xl bg-zinc-900/50 border border-zinc-800/60 text-sm text-cyan-300/90 font-mono-custom transition-all">
+        <p id="transcript-text" class="truncate"></p>
+      </div>
+
+      <!-- Main Mic Action Button Container -->
+      <div class="relative flex items-center justify-center my-4" style="width: 172px; height: 172px;">
+
+        <!-- Pulsing Rings (Active State) -->
+        <div id="pulse-rings" class="hidden pointer-events-none">
+          <div class="absolute inset-0 rounded-full border border-cyan-500/20 animate-ping-slow"></div>
+          <div class="absolute -inset-4 rounded-full border border-cyan-500/10 animate-ping-slow" style="animation-delay: 0.6s;"></div>
+        </div>
+
+        <!-- Ambient Glow -->
+        <div id="mic-glow" class="absolute inset-0 rounded-full pointer-events-none transition-all duration-700"></div>
+
+        <!-- Main Interactive Button -->
+        <button
+          id="mic-btn"
+          type="button"
+          aria-label="เริ่มหรือหยุดระบบสั่งการด้วยเสียง"
+          class="relative w-[136px] h-[136px] rounded-full flex items-center justify-center bg-gradient-to-b from-zinc-800/90 to-zinc-900 border border-zinc-700/50 hover:border-cyan-500/40 hover:shadow-[0_0_30px_rgba(6,182,212,0.2)] transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 group"
+        >
+          <!-- Mic Icon -->
+          <svg id="mic-icon" class="w-10 h-10 text-zinc-400 group-hover:text-cyan-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+          </svg>
+
+          <!-- Stop Icon (Hidden by default) -->
+          <svg id="stop-icon" class="w-10 h-10 text-cyan-400 hidden" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="6" y="6" width="12" height="12" rx="2" />
+          </svg>
+        </button>
+      </div>
+
+      <p class="text-[11px] tracking-[0.2em] uppercase text-zinc-500 font-mono-custom">
+        สั่งงานด้วยเสียง “ไอที” ➔ “Clean Air for Life”
+      </p>
+    </div>
+
+    <!-- ── Visualizer Section ──────────────────────────────── -->
+    <div class="w-full">
+      <div class="flex items-center justify-between mb-2 px-1">
+        <span class="text-[10px] tracking-[0.25em] uppercase text-zinc-500 font-mono-custom">
+          FREQUENCY RESPONSE
+        </span>
+        <span class="text-[10px] tracking-widest text-zinc-500 font-mono-custom">
+          20Hz - 20kHz
+        </span>
+      </div>
+
+      <div class="relative w-full h-28 rounded-xl bg-zinc-950/60 border border-zinc-800/60 overflow-hidden">
+        <!-- Canvas -->
+        <canvas id="visualizer-canvas" class="w-full h-full block"></canvas>
+      </div>
+    </div>
   </main>
-  <script type="module" src="app.js"></script>
+
+  <!-- ── Footer ────────────────────────────────────────────── -->
+  <footer class="py-4 text-center border-t border-zinc-800/60 text-[11px] text-zinc-600 font-mono-custom shrink-0">
+    Clean Air for Life © 2026 Assistant System
+  </footer>
+
+  <!-- ── Video Player Overlay Modal ────────────────────────── -->
+  <div id="video-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 video-modal-backdrop hidden">
+    <div class="relative w-full max-w-3xl bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between px-6 py-4 border-b border-zinc-800">
+        <h2 class="text-sm font-semibold text-cyan-400 font-display-custom tracking-wider">
+          🎬 Clean Air for Life Video
+        </h2>
+        <button
+          id="close-video-btn"
+          type="button"
+          aria-label="ปิดวิดีโอ"
+          class="text-zinc-400 hover:text-white p-1 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Video Element -->
+      <div class="relative aspect-video bg-black">
+        <video id="video-player" controls class="w-full h-full">
+          <source src="clean-air-for-life.mp4" type="video/mp4" />
+          เบราว์เซอร์ของคุณไม่รองรับการเล่นวิดีโอ HTML5
+        </video>
+      </div>
+    </div>
+  </div>
+
+  <!-- Entry Script -->
+  <script type="module" src="js/app.js"></script>
 </body>
 </html>
