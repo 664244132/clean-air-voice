@@ -1,0 +1,35 @@
+# ==============================================================================
+# Antigravity AI Exclusion Rules (.antigravityignore)
+# ป้องกันไม่ให้ AI สแกนไฟล์ขนาดใหญ่ ความลับ และไฟล์ชั่วคราวที่ไม่จำเป็น
+# ==============================================================================
+
+# Dependencies
+node_modules/
+package-lock.json
+
+# Environment variables & secrets
+.env
+.env.*
+!.env.example
+
+# Git metadata
+.git/
+
+# Large media files (วิดีโอ/เสียงขนาดใหญ่)
+public/*.mp4
+public/*.webm
+public/*.mkv
+public/*.avi
+
+# System & OS generated files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs & Temporary debug files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.temp/
+.tmp/
